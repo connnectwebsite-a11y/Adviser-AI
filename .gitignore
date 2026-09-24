@@ -1,0 +1,31 @@
+# Secrets
+.env
+*.env
+
+# User data
+data/
+uploads/
+indexes/
+mind_cache/
+backups/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Temporary files
+*.tmp
+*.log
