@@ -8,21 +8,25 @@ DRIVE_DB_PATH = (
     "AdviserAI/data/adviser.db"
 )
 
-LOCAL_DB_PATH = (
-    "/content/adviser/data/adviser.db"
+LOCAL_DB_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "data",
+    "adviser.db"
 )
 
 
 def get_db_path():
-    if os.path.isdir("/content/drive/MyDrive"):
+    configured_path = os.environ.get("DB_PATH", "").strip()
+
+    if configured_path:
+        db_path = configured_path
+    elif os.path.isdir("/content/drive/MyDrive"):
         db_path = DRIVE_DB_PATH
     else:
         db_path = LOCAL_DB_PATH
 
-    os.makedirs(
-        os.path.dirname(db_path),
-        exist_ok=True
-    )
+    db_path = os.path.abspath(db_path)
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
     return db_path
 
