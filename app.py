@@ -361,4 +361,11 @@ with gr.Blocks(css=app_css) as app:
     message.submit(chat, inputs=[message, chatbot, session_state, user_state], outputs=[message, chatbot])
     new_button.click(new_conversation, inputs=[session_state, user_state], outputs=chatbot)
 if __name__ == '__main__':
-    app.launch(share=True, css=CUSTOM_CSS, theme=gr.themes.Base())
+    port = int(os.environ.get("PORT", 7860))
+    app.launch(
+        server_name="0.0.0.0",
+        server_port=port,
+        share=False,
+        css=CUSTOM_CSS,
+        theme=gr.themes.Base()
+    )
