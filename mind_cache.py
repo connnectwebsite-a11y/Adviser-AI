@@ -8,7 +8,7 @@ DRIVE_CACHE_DIR = (
 )
 
 LOCAL_CACHE_DIR = (
-    "/content/adviser/data/mind_cache"
+    "/tmp/adviser/data/mind_cache"
 )
 
 # Change this whenever the Adviser Mind
