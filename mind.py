@@ -327,9 +327,19 @@ def build_adviser_mind(client, pages):
             )
 
         if not summary:
-            raise RuntimeError(
-                "A section summary returned empty."
+            # One extra attempt if the model returned an empty response.
+            summary = summarize_group(
+                client,
+                group
             )
+
+        if not summary:
+            # Do not fail the entire book because one LLM call
+            # returned empty. Preserve the source material instead.
+            summary = str(group).strip()
+
+        if not summary:
+            summary = "No summary was generated for this section."
 
         section_summaries.append({
             "start_page": group["start_page"],
