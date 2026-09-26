@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import os
+from storage import get_data_root
 
 
 DRIVE_DB_PATH = (
@@ -8,25 +9,22 @@ DRIVE_DB_PATH = (
     "AdviserAI/data/adviser.db"
 )
 
-LOCAL_DB_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "data",
-    "adviser.db"
+LOCAL_DB_PATH = (
+    "/content/adviser/data/adviser.db"
 )
 
 
 def get_db_path():
-    configured_path = os.environ.get("DB_PATH", "").strip()
+    db_path = str(
+        get_data_root()
+        / "data"
+        / "adviser.db"
+    )
 
-    if configured_path:
-        db_path = configured_path
-    elif os.path.isdir("/content/drive/MyDrive"):
-        db_path = DRIVE_DB_PATH
-    else:
-        db_path = LOCAL_DB_PATH
-
-    db_path = os.path.abspath(db_path)
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    os.makedirs(
+        os.path.dirname(db_path),
+        exist_ok=True
+    )
 
     return db_path
 

@@ -12,6 +12,10 @@ from memory_extractor import extract_memory
 from mind import build_adviser_mind
 from mind_cache import file_fingerprint, versioned_fingerprint, load_cached_mind, save_cached_mind
 from session import AdviserSession
+import sampled_book_processor as sampled_processor
+from sampled_batch_runner import run_safe_sampled_batch
+import large_book_processor
+import mind as mind_module
 client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 initialize_database()
 user_sessions = {}
@@ -34,6 +38,56 @@ def reset_upload_file():
     """Clear the file picker after processing."""
     return None
 
+
+
+# Large-book processing threshold.
+LARGE_BOOK_PAGE_THRESHOLD = 100
+
+
+def is_large_book(pages):
+    readable_count = sum(
+        1
+        for page in pages
+        if str(page.get("text", "")).strip()
+    )
+
+    return readable_count > LARGE_BOOK_PAGE_THRESHOLD
+
+
+
+def interpret_large_book_status(status):
+    pending = status.get("pending", [])
+    processed_now = status.get("processed_now", [])
+    stopped_reason = status.get("stopped_reason")
+    next_group = status.get("next_group")
+
+    if not pending:
+        return {
+            "state": "complete",
+            "message": "All sampled groups are complete.",
+            "next_group": None,
+        }
+
+    if stopped_reason == "rate_limit":
+        return {
+            "state": "paused_rate_limit",
+            "message": (
+                "Large-book learning paused safely because "
+                "the AI service rate limit was reached."
+            ),
+            "next_group": next_group,
+        }
+
+    return {
+        "state": "in_progress",
+        "message": (
+            "Large-book learning is safely checkpointed "
+            "and has more groups remaining."
+        ),
+        "next_group": next_group,
+    }
+
+
 def learn_book(file, session_id, user_id):
     if file is None:
         return ('Choose a PDF first.', gr.update(), knowledge_library_text(user_id), knowledge_removal_choices(user_id))
@@ -51,8 +105,61 @@ def learn_book(file, session_id, user_id):
         fingerprint = versioned_fingerprint(file_hash)
         adviser_mind = load_cached_mind(fingerprint)
         if not adviser_mind:
-            adviser_mind = build_adviser_mind(client, pages)
-            save_cached_mind(fingerprint, adviser_mind)
+            if is_large_book(pages):
+                batch_status = run_safe_sampled_batch(
+                    sampled_processor=sampled_processor,
+                    processor=large_book_processor,
+                    mind_module=mind_module,
+                    client=client,
+                    book_path=file_path,
+                    readable_pages=pages,
+                    max_groups=1,
+                    sample_count=12,
+                )
+
+                large_book_state = interpret_large_book_status(
+                    batch_status
+                )
+
+                if large_book_state["state"] != "complete":
+                    next_group = large_book_state["next_group"]
+
+                    if next_group is None:
+                        next_text = ""
+                    else:
+                        next_text = (
+                            f" Next sample group: {next_group}."
+                        )
+
+                    return (
+                        large_book_state["message"]
+                        + next_text,
+                        gr.update(),
+                        knowledge_library_text(user_id),
+                        knowledge_removal_choices(user_id),
+                    )
+
+                adviser_mind = (
+                    sampled_processor.build_sampled_adviser_mind(
+                        processor=large_book_processor,
+                        mind_module=mind_module,
+                        client=client,
+                        book_path=file_path,
+                        pages=pages,
+                        sample_count=12,
+                    )
+                )
+
+            else:
+                adviser_mind = build_adviser_mind(
+                    client,
+                    pages
+                )
+
+            save_cached_mind(
+                fingerprint,
+                adviser_mind
+            )
         if not user_id:
             raise ValueError('Authentication required.')
         save_user_knowledge(user_id, file_hash, Path(file_path).name, adviser_mind, chunks)
@@ -361,11 +468,4 @@ with gr.Blocks(css=app_css) as app:
     message.submit(chat, inputs=[message, chatbot, session_state, user_state], outputs=[message, chatbot])
     new_button.click(new_conversation, inputs=[session_state, user_state], outputs=chatbot)
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 7860))
-    app.launch(
-        server_name="0.0.0.0",
-        server_port=port,
-        share=False,
-        css=CUSTOM_CSS,
-        theme=gr.themes.Base()
-    )
+    app.launch(share=True, css=CUSTOM_CSS, theme=gr.themes.Base())

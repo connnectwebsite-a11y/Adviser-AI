@@ -1,5 +1,6 @@
 import hashlib
 import os
+from storage import get_data_root
 
 
 DRIVE_CACHE_DIR = (
@@ -8,7 +9,7 @@ DRIVE_CACHE_DIR = (
 )
 
 LOCAL_CACHE_DIR = (
-    "/tmp/adviser/data/mind_cache"
+    "/content/adviser/data/mind_cache"
 )
 
 # Change this whenever the Adviser Mind
@@ -17,10 +18,9 @@ MIND_PIPELINE_VERSION = "mind-v2"
 
 
 def get_cache_dir():
-    if os.path.isdir("/content/drive/MyDrive"):
-        cache_dir = DRIVE_CACHE_DIR
-    else:
-        cache_dir = LOCAL_CACHE_DIR
+    cache_dir = str(
+        get_data_root() / "mind_cache"
+    )
 
     os.makedirs(
         cache_dir,

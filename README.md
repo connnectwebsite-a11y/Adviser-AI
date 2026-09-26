@@ -1,107 +1,98 @@
 # Adviser AI
 
-Adviser AI is a conversational AI system that transforms user-uploaded books and documents into a persistent, personalized AI adviser.
+Adviser AI is a conversational AI adviser that learns
+reasoning frameworks from user-provided documents.
 
-Rather than functioning as a simple chat-with-PDF application, Adviser AI extracts knowledge and principles from uploaded material and uses them to support natural conversations about both the source material and new situations.
+Rather than simply answering questions about a PDF,
+Adviser AI builds an internal "Adviser Mind" from the
+document's principles, values, reasoning patterns,
+decision rules, cautions, and recurring themes.
 
-## Features
+The user can then have a natural conversation with the
+adviser and apply those principles to new situations.
 
-- User signup and login
-- Secure password hashing
-- Multi-user data isolation
-- Multiple PDF/books per account
-- Semantic retrieval with vector embeddings
+## Current v1 Features
+
+- PDF knowledge upload
+- PDF text extraction with PyMuPDF
+- Semantic chunk retrieval
+- SentenceTransformer embeddings
 - FAISS vector search
-- Adviser Mind generation
-- Persistent knowledge library
-- Persistent user memory
+- Adviser Mind synthesis
+- Large-document recursive synthesis
+- mind-v2 persistent synthesis cache
+- Natural Groq-powered conversation
 - Conversation context
-- Knowledge restoration after login/restart
-- Individual knowledge-source removal
-- Automatic knowledge rebuilding after deletion
-- Mobile-friendly Gradio interface
-- Groq-powered conversational responses
+- Persistent long-term user memory
+- Add, replace, and delete memories
+- SQLite persistence
+- Google Drive persistence in Colab
+- Gradio conversational interface
+- New-conversation reset
+- Friendly rate-limit handling
+
+## AI Model
+
+Conversation and Adviser Mind synthesis currently use:
+
+openai/gpt-oss-20b through Groq.
+
+Embeddings use:
+
+all-MiniLM-L6-v2
 
 ## Architecture
 
-User
-→ Gradio Interface
-→ Authentication / PDF Upload
-→ Text Extraction
-→ Chunking
-→ Sentence Transformer Embeddings
-→ FAISS Retrieval
-→ Adviser Mind + Persistent Memory
-→ Conversation Engine
-→ Groq LLM
-→ AI Response
+PDF
+  -> text extraction
+  -> chunks
+  -> embeddings
+  -> FAISS semantic index
 
-## Technology Stack
+PDF
+  -> section analysis
+  -> recursive reduction
+  -> Adviser Mind
+  -> persistent mind-v2 cache
 
-- Python
-- Gradio
-- Groq API
-- PyMuPDF
-- Sentence Transformers
-- FAISS
-- SQLite
-- NumPy
+User message
+  -> memory extraction
+  -> semantic retrieval
+  -> Adviser Mind
+  -> conversation history
+  -> AI response
 
-## Core Components
+## Persistent Data
 
-### Knowledge Engine
+Long-term memory database:
 
-Creates embeddings from document chunks and performs semantic retrieval using FAISS.
+/content/drive/MyDrive/AdviserAI/data/adviser.db
 
-### Adviser Mind
+Adviser Mind cache:
 
-Extracts higher-level ideas and principles from uploaded material so the adviser can apply the material to situations beyond direct document lookup.
+/content/drive/MyDrive/AdviserAI/mind_cache
 
-### Persistent Memory
+Permanent source:
 
-Stores durable user information such as preferences, goals, projects and explicitly remembered information.
+/content/drive/MyDrive/AdviserAI/source
 
-### Conversation Engine
+## Development Warning
 
-Combines relevant document knowledge, Adviser Mind, persistent memory and recent conversation history to produce context-aware responses.
+The current development identity uses:
 
-### Authentication
+adviser_dev_user
 
-Provides prototype account creation, password hashing, login and user-specific data separation.
+This is suitable only for single-user development.
 
-## Running Locally
+Before public multi-user deployment, replace it with
+real authentication and per-user identities.
 
-Install the dependencies with:
+The current SQLite/Google Drive architecture is also
+intended for development rather than concurrent public
+production.
 
-    pip install -r requirements.txt
+## Product Principle
 
-Set the GROQ_API_KEY environment variable, then run:
-
-    python app.py
-
-## Privacy
-
-API credentials are not included in this repository.
-
-User databases, uploaded documents, generated knowledge caches and other user-specific data are excluded from version control.
-
-## Current Status
-
-Adviser AI v1 is a working portfolio prototype demonstrating document ingestion, retrieval-augmented generation, persistent knowledge, persistent memory, multi-user authentication, multi-document reasoning and conversational AI.
-
-## Production Roadmap
-
-- Managed authentication
-- PostgreSQL or another production database
-- Production vector storage
-- Durable document storage
-- Stronger session management
-- Rate limiting and monitoring
-- Automated testing
-- Production secrets management
-- Dedicated web frontend
-- Scalable deployment infrastructure
-
-## Purpose
-
-Adviser AI was built as an AI engineering portfolio project exploring retrieval-augmented generation, persistent memory, document intelligence, multi-user application architecture and conversational AI.
+Upload in seconds.
+Forget the technology.
+Have a conversation.

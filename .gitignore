@@ -29,3 +29,7 @@ venv/
 # Temporary files
 *.tmp
 *.log
+book_checkpoints/
+*.bak
+*_backup
+*.backup
