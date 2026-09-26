@@ -155,10 +155,21 @@ Material from pages
                 max_tokens=1600
             )
 
-            content = response.choices[0].message.content
+            message = response.choices[0].message
+
+            content = getattr(message, "content", None)
 
             if content is not None:
                 result = str(content).strip()
+
+                if result:
+                    return result
+
+            # GPT-OSS fallback when final content is empty.
+            reasoning = getattr(message, "reasoning", None)
+
+            if reasoning is not None:
+                result = str(reasoning).strip()
 
                 if result:
                     return result
