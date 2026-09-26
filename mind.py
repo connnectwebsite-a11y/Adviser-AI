@@ -139,25 +139,52 @@ Material from pages
 {group["text"]}
 """
 
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.2,
-        max_tokens=700
+    last_error = None
+
+    for attempt in range(1, 4):
+        try:
+            response = client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.2,
+                max_tokens=1600
+            )
+
+            content = response.choices[0].message.content
+
+            if content is not None:
+                result = str(content).strip()
+
+                if result:
+                    return result
+
+            last_error = RuntimeError(
+                f"Empty section summary on attempt {attempt}"
+            )
+
+        except Exception as exc:
+            # A rate limit will not be fixed by immediately retrying.
+            # Stop so we do not make unnecessary API attempts.
+            error_text = str(exc).lower()
+
+            if (
+                "429" in error_text
+                or "rate limit" in error_text
+                or "rate_limit" in error_text
+            ):
+                raise
+
+            last_error = exc
+
+    raise RuntimeError(
+        "Section summary failed after 3 attempts: "
+        f"{last_error}"
     )
-
-    result = (
-        response.choices[0]
-        .message.content.strip()
-    )
-
-    return result
-
 
 def group_summaries_by_size(
     summaries,
@@ -229,7 +256,7 @@ ANALYSES:
 """
 
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model="openai/gpt-oss-120b",
         messages=[
             {
                 "role": "user",
@@ -303,7 +330,7 @@ def recursively_reduce_summaries(
 def build_adviser_mind(client, pages):
     groups = group_pages(
         pages,
-        max_chars=30000
+        max_chars=22000
     )
 
     if not groups:
@@ -327,19 +354,9 @@ def build_adviser_mind(client, pages):
             )
 
         if not summary:
-            # One extra attempt if the model returned an empty response.
-            summary = summarize_group(
-                client,
-                group
+            raise RuntimeError(
+                "A section summary returned empty."
             )
-
-        if not summary:
-            # Do not fail the entire book because one LLM call
-            # returned empty. Preserve the source material instead.
-            summary = str(group).strip()
-
-        if not summary:
-            summary = "No summary was generated for this section."
 
         section_summaries.append({
             "start_page": group["start_page"],
